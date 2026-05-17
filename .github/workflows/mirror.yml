@@ -1,27 +1,21 @@
-name: FreeBSD Lab Sync
+name: freeBSD Lab Sync
 on:
   schedule:
-    - cron: "0 */2 * * *"       # Runs every 2 hours to conserve runner limits
-  workflow_dispatch:           # Allows to trigger it manually via GitHub UI
+    - cron: "*/7 * * * *" 
+  workflow_dispatch:      
 
 jobs:
   sync:
     runs-on: ubuntu-latest
     steps:
-      - name: Configure Git and Mirror FreeBSD Upstream
-        env:
-          CB_TOKEN: ${{ secrets.CODEBERG_TOKEN }}
+      - name: Force Sync All Tags
         run: |
-          # 1. Clone FreeBSD core source repository as a bare mirror
-          git clone --mirror https://github.com/freebsd/freebsd-src.git freebsd-src.git
-          cd freebsd-src.git
-
-          # 2. Add specific Codeberg destination remote
-          # Ensure you replace 'freebsd-lab' with your actual Codeberg repo name
-          git remote add codeberg https://codeberg.org/spiritedcaveman/freeBSD-lab.git
-
-          # 3. Inject Codeberg authentication token securely via HTTP extraheader
-          git config --local http.https://codeberg.org/.extraheader "Authorization: Basic $(echo -n "spiritedcaveman:$CB_TOKEN" | base64)"
-
-          # 4. Atomic force mirror push (Syncs main, stable branches, and release tags)
-          git push --force --mirror codeberg
+          git clone --mirror https://github.com/freebsd/freebsd-src.git open.git
+          cd open.git
+          git remote add codeberg https://${{ secrets.CODEBERG_TOKEN }}@codeberg.org/spiritedcaveman/freeBSD-lab.git
+          
+          # Force push all tags specifically
+          git push --force codeberg --tags
+          
+          # Then sync the branches
+          git push --force codeberg master
